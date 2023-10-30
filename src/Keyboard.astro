@@ -1,0 +1,322 @@
+---
+import ArcadeButton from './ArcadeButton.astro'
+
+const keyboard = [
+    "qwertyuiop".split(""),
+    "asdfghjkl".split(""),
+    "zxcvbnm,".split("")
+]
+
+const keyWidth = 10;
+const keyHeight = 7;
+
+function calculateStyle(rowIndex: number, keyIndex: number){
+    //the (1/2)*keyWidth * rowIndex creates the staggered indentation
+    const translateX = keyWidth*keyIndex*10 + (1/2)*keyWidth*rowIndex*10 + '%'
+    const translateY = rowIndex * 100 + '%'
+    return {
+        transform: `translate(${translateX}, ${translateY})`
+    }
+}
+---
+<div class="keyboard-wrapper">
+    <div class="preserve-aspect-ratio">
+        <div class="keyboard">
+        
+            {keyboard.map((row, index)=> ( 
+                <>
+                    {row.map((key, keyIndex)=>( 
+                        <div class="key below-key" data-key={key} style={calculateStyle(index, keyIndex)}>
+                            <div class="shadow"></div>
+                        </div>
+                        <div class="key  keyboard-layer" data-key={key} style={calculateStyle(index, keyIndex)}>
+                            <div class="outer">
+                                <div class="inner">
+                                    <div class="hole"></div>
+                                    <div class="cap"></div>
+                                    <div class="beam"></div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                        
+                    ))}
+        
+                </>
+            ))}
+        </div>
+    </div>
+</div>  
+
+<!--   <div data-key={key} class="arcade-button">
+                            <div class="arcade-button__piston"></div>
+                        </div> -->
+
+<!--                <div data-key={key} class="arcade-button">
+                            <div class="arcade-button__piston"></div>
+                        </div> -->
+
+<script>
+    document.querySelectorAll('.arcade-button').forEach(el =>{
+        el.addEventListener('mousedown', ()=>{
+            el.classList.add('is-pressed')
+        })
+        el.addEventListener('mouseup', ()=>{
+            el.classList.remove('is-pressed')
+        })
+    })
+</script>
+
+<style is:global>
+    .shadow{
+        background:red;
+        width: 100%;
+        height: 100%;
+        border-radius: 100%;
+        box-shadow: 
+            0 0 10px 10px black,
+            0 0 50px 0px black;
+    }
+
+    .keyboard-wrapper{
+        /* background:orange; */
+        position: absolute;
+        top: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        /* background: red; */
+        height: 100%;
+        width: 100%;
+        /* transform-origin: ; */
+        /* transform: perspective(800px) rotateX(70deg); */
+        
+    }
+    .animation-layer{
+        z-index: 100;
+        /* display: none; */
+    }
+    .key{
+        /* background: blue; */
+        /* background:green; */
+        height: 33.333%;
+        width: 10%;
+        position: absolute;
+        --hue:200;
+    }
+
+    .below-key{
+        z-index: -10;
+    }
+
+    .outer{
+        background: hsl(var(--hue), 100%, 50%);
+        width: 100%;
+        height: 100%;
+        border-radius: 100%;
+        position: relative;
+
+        box-shadow: 
+            inset 1px 1px 1px 0 white,
+            1px 1px 1px 0 black;
+    }
+    .inner{
+        /* transform: scale(.8); */
+        background: blue;
+        width:80%;
+        height: 75%;
+        border-radius: 100%;
+        position: absolute;
+        top: 3%;
+        left: 0;
+        right: 0;
+        margin: auto;
+        
+    }
+    .hole{
+        background: hsl(var(--hue), 100%, 50%);
+    
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        bottom: 0;
+        border-radius: 100%;
+        box-shadow: inset 0 -1px 3px 0px rgba(0, 0, 0, 0.5);
+    }
+
+    .is-pressed .hole{
+        box-shadow:  1px 1px 3px 0 white;
+    }
+
+    .cap{
+        transition-property: all;
+        transition-duration: .1s;
+        box-shadow: inset 2px 2px 3px 1px white;
+        background: hsl(var(--hue), 100%, 50%);
+        scale: .95;
+        transform: translateY(-10%);
+        height: 100%;
+        border-radius: 100%;
+        width: 100%;
+        /* transform: scale(.75) translateY(-1.2%); */
+    }
+
+    .is-pressed .cap{
+        box-shadow: inset 2px 2px 3px 1px rgba(0, 0, 0, 0.5);
+        transform: translateY(10%);
+        /* transform: perspective(800px) translateZ(50px) ; */
+    }
+
+    @keyframes beamshoot {
+    0% {height: 100%; border-radius: 100% 100% 100% 100% / 50% 50% 100% 100%}
+    80% {
+        height: 400%; 
+        border-radius: 100% 100% 100% 100% / 50% 50% 25% 25%;
+        /* opacity: 0; */
+    }
+    100%{
+        /* opacity: 0; */
+    }
+}
+
+    .beam{
+
+        /* transform: scale(.8); */
+        transition-property: all;
+        transition-duration: 1s;
+        width:100%;
+        /* height: 800%; */
+        height: 100%;
+        opacity: 0;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        margin: auto;
+        /* transform: translateY(-10%); */
+        background: rgb(0,204,251);
+        background: 
+            linear-gradient(90deg, rgba(0,204,251,1) 5%, rgba(34,82,195,0) 10%, rgba(45,107,253,0) 90%, rgba(21,158,252,1) 95%),
+            linear-gradient(0deg, rgba(0,204,251,1) 0%, rgba(21,158,252,0) 100%);
+        /* box-shadow: inset 0 -20px 5px 10px blue; */
+        /* background: red; */
+   /* horizontal radius / vertical radius */
+        /* vertical radius has to be height/parent-height */     
+        border-radius: 100% 100% 100% 100% / 100% 100% 100% 100%;
+        /* animation-name:beamshoot; */
+        /* animation-duration: .5s; */
+    }
+
+    .is-pressed .beam{
+        opacity: 0.8;
+        transition-duration: .1s;
+        height: 100vh;
+        border-radius: 100% 100% 100% 100% / 100% 100% 8% 8%;
+    }
+    /* .beam::before{
+        display: block;
+        width: 100%;
+        height: 10%;
+        background:rgba(0, 208, 255, 0.298);
+        transform: translateY(-50%);
+        content: "";
+        border-radius: 100%;
+    } */
+
+    /* Halo Animation */
+        /* The animation code */
+    @keyframes halogrow {
+    from {box-shadow: 0 0 10px 10px turquoise, inset  0 0 5px 5px turquoise;}
+    to {
+        scale: 5;
+        box-shadow: 0 0 50px 10px turquoise, inset  0 0 5px 5px turquoise;
+    }}
+    .halo{
+        /* background: black; */
+        position: absolute;
+        /* z-index: -10; */
+        top:0;
+        left:0;
+        width: 100%;
+        height:100%;
+        border-radius: 100%;
+        
+        /* zoom: 6; */
+        /* box-shadow: 0 0 10px 10px turquoise, inset  0 0 5px 5px turquoise; */
+        transform: scaleY(0.7);
+        animation-name:halogrow;
+        animation-duration: .5s;
+    }
+
+
+
+
+
+
+
+
+
+
+    .arcade-button{
+        width: 100%;
+        height: 100%;
+        border-radius: 10vw;
+        padding-left:1vw;
+        padding-right:1vw;
+        padding-bottom:2vw;
+        /* background: blue; */
+        --hue: 200;
+        background-color: hsl(var(--hue), 100%, 50%);
+        /* box-shadow: inset 5px 5px 15px 5px rgba(255, 255, 255, 0.5); */
+    }
+    .arcade-button.is-pressed .arcade-button__piston{
+        transform: translateY(5px);
+        /* transition-duration: 1s; */
+        box-shadow: 
+            inset 5px 5px 15px 5px rgba(0, 0, 0, 0.5),
+            0px 0px 0px 0px rgba(0, 0, 0, 0.278);
+    }
+
+    .arcade-button__piston{
+        transition-property: transform, box-shadow;
+        transition-duration: .1s;
+        transform: translateY(-5px);
+        background: green;
+        height: 100%;
+        width: 100%;
+        border-radius: 10vw;
+        background-color: hsl(var(--hue), 100%, 50%);
+        box-shadow: 
+            inset 5px 5px 15px 5px rgba(255, 255, 255, 0.5),
+            0px 10px 0px 0px rgba(0, 0, 0, 0.278),
+            5px 15px 5px 5px rgba(0, 0, 0, 0.3);
+    }
+
+
+
+    .keyboard{
+        position: absolute;
+        /* background: rgba(0, 0, 0, 0.8);
+        border-radius: 50%; */
+        /* box-shadow: 0 0 100px 100px rgba(0, 0, 0, 0.8); */
+        /* height: 100%; */
+        width: 100%;
+        height: 100%;
+        /* overflow: hidden; */
+        /* transform-style: preserve-3d; */
+        transform: rotateX(0deg) ;
+        /* background: orange; */
+        /* display: flex; */
+        /* flex-wrap: wrap; */
+        /* flex-direction: column; */
+    }
+
+    .preserve-aspect-ratio{
+        position: relative;
+        /* background: blue; */
+        width:80%;
+        padding-bottom: 15%;
+    }
+
+
+</style>

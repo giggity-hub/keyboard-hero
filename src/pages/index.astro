@@ -1,5 +1,8 @@
 ---
-
+import Keyboard from "../Keyboard.astro";
+import Background from "../Background.astro"
+import NeonSunset from "../NeonSunset.astro"
+import TextDisplay from "../TextDisplay.astro"
 ---
 
 <html lang="en">
@@ -9,8 +12,169 @@
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		<title>Astro</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+		
+		<style is:inline>
+			html {
+			box-sizing: border-box;
+			}
+			*, *:before, *:after {
+			box-sizing: inherit;
+			}
+			body{
+				margin: 0;
+				--line-height: 30px;
+				--char-width: 20px;
+				background: black;
+				height: 100vh;
+				overflow: hidden;
+			}
+
+			.upper-half{
+				width: 100%;
+				height: 50%;
+				position: relative;
+			}
+			.bottom-half{
+				position: relative;
+				height: 50%;
+			}
+
+			.crt-filter{
+        position: fixed;
+        opacity: 0.2;
+        width: 100%;
+        height: 100%;
+        z-index: 100;
+        background-image: repeating-linear-gradient(black, black 2px, transparent 2px, transparent 4px);
+    }
+		</style>
 	</head>
 	<body>
-		<h1>Astro</h1>
+		<div class="crt-filter"></div>
+		<!-- <Background/> -->
+		<div class="upper-half">
+			<NeonSunset/>
+			<TextDisplay/>
+		</div>
+		<div class="bottom-half">
+			<Background/>
+			<Keyboard/>
+		</div>
+		
 	</body>
+	<script>
+		import {TextOutput} from '../TextOutput'
+		import {tokenize} from '../utils'
+		import {KeyboardController} from '../Keyboard'
+		
+		class App{
+			wordIndex = 0;
+			charIndex = 0;
+			words: string[][] = [];
+			userInput: string[][]= [[]];
+			output: TextOutput;
+			keyboard: KeyboardController
+			constructor(output:TextOutput, keyboard: KeyboardController){
+				this.output = output
+				this.keyboard = keyboard;
+				document.addEventListener('keydown', this.handleKeyPress.bind(this))
+				document.addEventListener('keyup', this.handleKeyUp.bind(this))
+			}
+			loadText(text: string){
+				this.wordIndex = 0;
+				this.charIndex = 0;
+				this.words = tokenize(text)
+				this.userInput = [[]]
+				this.output.loadTokens(this.words)
+			}
+
+			handleKeyUp(e: KeyboardEvent){
+				this.keyboard.releaseKey(e.key)
+			}
+
+			handleKeyPress(e: KeyboardEvent){
+				this.keyboard.pressKey(e.key)
+				const ignoredKeys = ['Tab', 'CapsLock', 'Shift', 'Control', 'Alt', 'ContextMenu']
+				if(ignoredKeys.includes(e.key)){
+					// When pressing Shift + m for M the release of Shift button triggers a separate keyup
+					return
+				}
+				console.log(this.wordIndex, this.charIndex)
+
+				if(e.key == 'Backspace'){
+					if (this.charIndex == 0){
+						console.log('going to prev word')
+						this.userInput.pop()
+						this.wordIndex--;
+						this.charIndex = this.userInput[this.wordIndex].length;
+					}else{
+						this.charIndex--;
+						if (! this.words[this.wordIndex][this.charIndex]) {
+							this.output.popFalseChar(this.wordIndex)
+						}
+						this.userInput[this.wordIndex].pop()
+					}
+					this.output.markCharacter(this.wordIndex, this.charIndex, 'clean')
+					this.output.moveCaret(this.wordIndex, this.charIndex)
+					return;
+				}
+
+				if (e.code == 'Space') {
+					if (this.userInput[this.wordIndex].join('') == this.words[this.wordIndex].join('')){
+						console.log('correkdo')
+						this.output.highlightWord(this.wordIndex)
+					}
+					this.wordIndex++
+					this.charIndex=0
+					this.userInput.push([])
+					this.output.moveCaret(this.wordIndex, this.charIndex)
+
+
+					return;
+				}
+
+				const isLastCharInWord = this.words[this.wordIndex].length == this.charIndex
+				const isCorrect = this.words[this.wordIndex][this.charIndex] == e.key;
+				
+				//it is a regular keypress
+				//add the keypress to the userInput
+				this.userInput[this.wordIndex].push(e.key)
+
+				//now for the comparison
+				const gold = this.words[this.wordIndex][this.charIndex]
+				if (gold == undefined) {
+					//der boi muss ein extra moped inserieren
+					console.log('boi')
+					this.output.pushFalseChar(this.wordIndex,this.charIndex, e.key)
+					this.charIndex++
+					return
+				}else if(gold != e.key){
+					this.output.markCharacter(this.wordIndex, this.charIndex, 'false')
+					this.charIndex++
+					this.output.moveCaret(this.wordIndex, this.charIndex)
+					return;
+				}else{
+					//der boi hat richtigen input gemacht
+					this.output.markCharacter(this.wordIndex, this.charIndex, 'correct')
+					this.charIndex++
+					this.output.moveCaret(this.wordIndex, this.charIndex)
+					return;
+				}
+
+			}
+		}
+
+		const $textDisplay = document.getElementById('text-display')!
+		const $container = document.getElementById('text-container')!
+		const text = 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.'
+		const controlla = new TextOutput($textDisplay, $container)
+
+		const keyboardController = new KeyboardController()
+		const app = new App(controlla, keyboardController)
+		app.loadText(text)
+		
+	</script>
 </html>
